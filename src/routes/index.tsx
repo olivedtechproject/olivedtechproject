@@ -4,10 +4,10 @@ import { MessageCircle, Wind, Mail, ArrowRight } from "lucide-react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Common Ground — work through conflicts together" },
-      { name: "description", content: "A kind place for kids to share their side of a conflict, calm big feelings, and reach out to make things right." },
-      { property: "og:title", content: "Common Ground — work through conflicts together" },
-      { property: "og:description", content: "Share your side, calm big feelings, and reach out to make things right." },
+      { title: "Olive — work through conflicts together" },
+      { name: "description", content: "A kind place for kids to ask if they were in the wrong, cool big feelings, and reach out to make things right." },
+      { property: "og:title", content: "Olive — work through conflicts together" },
+      { property: "og:description", content: "Ask if you were in the wrong, cool big feelings, and reach out to make things right." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -16,8 +16,8 @@ export const Route = createFileRoute("/")({
 });
 
 const steps = [
-  { to: "/stories", icon: MessageCircle, title: "1. Share your side", text: "Post what happened under a nickname and hear what others think. Give kind feedback on other stories too." },
-  { to: "/calm", icon: Wind, title: "2. Calm the storm", text: "Pick how you feel and find a way to settle it, like lying down with music or a walk outside." },
+  { to: "/stories", icon: MessageCircle, title: "1. Am I in the Wrong?", text: "Post what happened under a nickname and hear what others think. Give kind feedback on other stories too." },
+  { to: "/calm", icon: Wind, title: "2. Cool Down", text: "Pick how you feel and find a way to settle it, like lying down with music or a walk outside." },
   { to: "/reach-out", icon: Mail, title: "3. Reach out", text: "Write a letter to the other person: how you saw it, how you feel, and something kind for the future." },
 ] as const;
 
@@ -27,7 +27,7 @@ function Index() {
       <section className="py-16 text-center md:py-24">
         <p className="mb-4 text-sm font-bold uppercase tracking-widest text-primary">Had a falling out?</p>
         <h1 className="mx-auto max-w-3xl text-5xl font-bold leading-tight text-foreground md:text-6xl">
-          Every conflict has two sides. Let's find the common ground.
+          Every conflict has two sides. Let's find the olive branch.
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
           A gentle place to be heard, cool down, and take the first step toward fixing things.

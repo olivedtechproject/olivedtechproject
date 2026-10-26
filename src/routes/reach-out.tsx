@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/reach-out")({
   head: () => ({
     meta: [
-      { title: "Reach Out — Common Ground" },
+      { title: "Reach Out — Olive" },
       { name: "description", content: "Write a caring letter to the other person in your conflict and take the first step to make things right." },
-      { property: "og:title", content: "Reach Out — Common Ground" },
+      { property: "og:title", content: "Reach Out — Olive" },
       { property: "og:description", content: "Write a caring letter to the other person and take the first step." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
