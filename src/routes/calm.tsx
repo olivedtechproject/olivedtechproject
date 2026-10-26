@@ -1,3 +1,4 @@
+import type * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 

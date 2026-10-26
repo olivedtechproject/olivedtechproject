@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CalmRouteImport } from './routes/calm'
+import { Route as ReachOutRouteImport } from './routes/reach-out'
+import { Route as StoriesRouteImport } from './routes/stories'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalmRoute = CalmRouteImport.update({
+  id: '/calm',
+  path: '/calm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReachOutRoute = ReachOutRouteImport.update({
+  id: '/reach-out',
+  path: '/reach-out',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoriesRoute = StoriesRouteImport.update({
+  id: '/stories',
+  path: '/stories',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/calm': typeof CalmRoute
+  '/reach-out': typeof ReachOutRoute
+  '/stories': typeof StoriesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calm': typeof CalmRoute
+  '/reach-out': typeof ReachOutRoute
+  '/stories': typeof StoriesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/calm': typeof CalmRoute
+  '/reach-out': typeof ReachOutRoute
+  '/stories': typeof StoriesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/calm' | '/reach-out' | '/stories'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/calm' | '/reach-out' | '/stories'
+  id: '__root__' | '/' | '/calm' | '/reach-out' | '/stories'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CalmRoute: typeof CalmRoute
+  ReachOutRoute: typeof ReachOutRoute
+  StoriesRoute: typeof StoriesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calm': {
+      id: '/calm'
+      path: '/calm'
+      fullPath: '/calm'
+      preLoaderRoute: typeof CalmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reach-out': {
+      id: '/reach-out'
+      path: '/reach-out'
+      fullPath: '/reach-out'
+      preLoaderRoute: typeof ReachOutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stories': {
+      id: '/stories'
+      path: '/stories'
+      fullPath: '/stories'
+      preLoaderRoute: typeof StoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CalmRoute: CalmRoute,
+  ReachOutRoute: ReachOutRoute,
+  StoriesRoute: StoriesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
