@@ -11,10 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/stories")({
   head: () => ({
     meta: [
-      { title: "Stories — Common Ground" },
-      { name: "description", content: "Share your side of a conflict anonymously and give kind feedback to others." },
-      { property: "og:title", content: "Stories — Common Ground" },
-      { property: "og:description", content: "Share your side of a conflict anonymously and give kind feedback to others." },
+      { title: "Am I in the Wrong? — Olive" },
+      { name: "description", content: "Tell us your side of a conflict anonymously and give kind feedback to others." },
+      { property: "og:title", content: "Am I in the Wrong? — Olive" },
+      { property: "og:description", content: "Tell us your side of a conflict anonymously and give kind feedback to others." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -73,7 +73,7 @@ function Stories() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 pb-10">
-      <h1 className="mt-6 text-4xl font-bold md:text-5xl">Share your side</h1>
+      <h1 className="mt-6 text-4xl font-bold md:text-5xl">Am I in the Wrong?</h1>
       <p className="mt-3 text-lg text-muted-foreground">
         Tell what happened and ask: was I fair? Use a nickname — never your real name or anyone else's.
       </p>
