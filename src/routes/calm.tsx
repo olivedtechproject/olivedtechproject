@@ -5,9 +5,9 @@ import { useState } from "react";
 export const Route = createFileRoute("/calm")({
   head: () => ({
     meta: [
-      { title: "Calm Down — Common Ground" },
+      { title: "Cool Down — Olive" },
       { name: "description", content: "Pick how you feel and get ideas to calm and channel big emotions." },
-      { property: "og:title", content: "Calm Down — Common Ground" },
+      { property: "og:title", content: "Cool Down — Olive" },
       { property: "og:description", content: "Pick how you feel and get ideas to calm and channel big emotions." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -67,7 +67,7 @@ function Calm() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 pb-10">
-      <h1 className="mt-6 text-4xl font-bold md:text-5xl">Calm the storm</h1>
+      <h1 className="mt-6 text-4xl font-bold md:text-5xl">Cool Down</h1>
       <p className="mt-3 text-lg text-muted-foreground">Big feelings are normal. Choose what fits, then try one idea.</p>
 
       <div className="mt-8 rounded-[var(--radius)] bg-card p-6 shadow-soft">
