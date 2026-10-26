@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CalmRouteImport } from './routes/calm'
+import { Route as ModerateRouteImport } from './routes/moderate'
 import { Route as ReachOutRouteImport } from './routes/reach-out'
 import { Route as StoriesRouteImport } from './routes/stories'
 
@@ -22,6 +23,11 @@ const IndexRoute = IndexRouteImport.update({
 const CalmRoute = CalmRouteImport.update({
   id: '/calm',
   path: '/calm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModerateRoute = ModerateRouteImport.update({
+  id: '/moderate',
+  path: '/moderate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReachOutRoute = ReachOutRouteImport.update({
@@ -38,12 +44,14 @@ const StoriesRoute = StoriesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calm': typeof CalmRoute
+  '/moderate': typeof ModerateRoute
   '/reach-out': typeof ReachOutRoute
   '/stories': typeof StoriesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calm': typeof CalmRoute
+  '/moderate': typeof ModerateRoute
   '/reach-out': typeof ReachOutRoute
   '/stories': typeof StoriesRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/calm': typeof CalmRoute
+  '/moderate': typeof ModerateRoute
   '/reach-out': typeof ReachOutRoute
   '/stories': typeof StoriesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calm' | '/reach-out' | '/stories'
+  fullPaths: '/' | '/calm' | '/moderate' | '/reach-out' | '/stories'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calm' | '/reach-out' | '/stories'
-  id: '__root__' | '/' | '/calm' | '/reach-out' | '/stories'
+  to: '/' | '/calm' | '/moderate' | '/reach-out' | '/stories'
+  id: '__root__' | '/' | '/calm' | '/moderate' | '/reach-out' | '/stories'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalmRoute: typeof CalmRoute
+  ModerateRoute: typeof ModerateRoute
   ReachOutRoute: typeof ReachOutRoute
   StoriesRoute: typeof StoriesRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/calm'
       fullPath: '/calm'
       preLoaderRoute: typeof CalmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/moderate': {
+      id: '/moderate'
+      path: '/moderate'
+      fullPath: '/moderate'
+      preLoaderRoute: typeof ModerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reach-out': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalmRoute: CalmRoute,
+  ModerateRoute: ModerateRoute,
   ReachOutRoute: ReachOutRoute,
   StoriesRoute: StoriesRoute,
 }
