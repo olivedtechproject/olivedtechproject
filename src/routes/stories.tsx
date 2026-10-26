@@ -1,7 +1,7 @@
 import type * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,8 @@ const verdicts = {
 type Verdict = keyof typeof verdicts;
 
 function useNickname() {
-  const [nick, setNick] = useState(() => (typeof window === "undefined" ? "" : localStorage.getItem("cg-nick") ?? ""));
+  const [nick, setNick] = useState("");
+  useEffect(() => { setNick(localStorage.getItem("cg-nick") ?? ""); }, []);
   return [nick, (v: string) => { setNick(v); localStorage.setItem("cg-nick", v); }] as const;
 }
 
