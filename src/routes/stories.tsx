@@ -64,7 +64,7 @@ function Stories() {
     setBusy(true);
     const { error } = await supabase.from("stories").insert({ nickname: nick.trim(), title: title.trim(), body: body.trim() });
     setBusy(false);
-    if (error) return toast.error("Couldn't post. Try again.");
+    if (error) { toast.error("Couldn't post. Try again."); return; }
     setTitle(""); setBody("");
     toast.success("Your story is up. Be kind to yourself.");
     qc.invalidateQueries({ queryKey: ["stories"] });
@@ -106,10 +106,10 @@ function StoryCard({ story, nick }: { story: Story; nick: string }) {
 
   async function reply(e: React.FormEvent) {
     e.preventDefault();
-    if (!nick.trim()) return toast.error("Add your nickname in the box at the top first.");
+    if (!nick.trim()) { toast.error("Add your nickname in the box at the top first."); return; }
     if (text.trim().length < 2) return;
     const { error } = await supabase.from("feedback").insert({ story_id: story.id, nickname: nick.trim(), verdict, body: text.trim() });
-    if (error) return toast.error("Couldn't send feedback.");
+    if (error) { toast.error("Couldn't send feedback."); return; }
     setText("");
     qc.invalidateQueries({ queryKey: ["stories"] });
   }
