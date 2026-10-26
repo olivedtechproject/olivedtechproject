@@ -18,25 +18,34 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          downvotes: number
+          hearts: number
           id: string
           nickname: string
           story_id: string
+          upvotes: number
           verdict: string
         }
         Insert: {
           body: string
           created_at?: string
+          downvotes?: number
+          hearts?: number
           id?: string
           nickname: string
           story_id: string
+          upvotes?: number
           verdict: string
         }
         Update: {
           body?: string
           created_at?: string
+          downvotes?: number
+          hearts?: number
           id?: string
           nickname?: string
           story_id?: string
+          upvotes?: number
           verdict?: string
         }
         Relationships: [
@@ -53,8 +62,42 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          hearts: number
           id: string
           nickname: string
+          status: string
+          title: string
+          upvotes: number
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          hearts?: number
+          id?: string
+          nickname: string
+          status?: string
+          title: string
+          upvotes?: number
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          hearts?: number
+          id?: string
+          nickname?: string
+          status?: string
+          title?: string
+          upvotes?: number
+        }
+        Relationships: []
+      }
+      tips: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          nickname: string
+          status: string
           title: string
         }
         Insert: {
@@ -62,6 +105,7 @@ export type Database = {
           created_at?: string
           id?: string
           nickname: string
+          status?: string
           title: string
         }
         Update: {
@@ -69,7 +113,26 @@ export type Database = {
           created_at?: string
           id?: string
           nickname?: string
+          status?: string
           title?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -78,10 +141,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      react: {
+        Args: { _id: string; _kind: string; _target: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -208,6 +281,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator"],
+    },
   },
 } as const
