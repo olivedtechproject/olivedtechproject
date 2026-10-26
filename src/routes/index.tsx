@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, Wind, Mail, ArrowRight } from "lucide-react";
+import { MessageCircle, Wind, Mail } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Olive — work through conflicts together" },
-      { name: "description", content: "A kind place for kids to ask if they were in the wrong, cool big feelings, and reach out to make things right." },
-      { property: "og:title", content: "Olive — work through conflicts together" },
-      { property: "og:description", content: "Ask if you were in the wrong, cool big feelings, and reach out to make things right." },
+      { title: "Olive — extend the branch" },
+      { name: "description", content: "For teens, by teens: ask if you were in the wrong, cool down, and reach out to make things right." },
+      { property: "og:title", content: "Olive — extend the branch" },
+      { property: "og:description", content: "For teens, by teens: ask if you were in the wrong, cool down, and reach out." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -16,34 +16,41 @@ export const Route = createFileRoute("/")({
 });
 
 const steps = [
-  { to: "/stories", icon: MessageCircle, title: "1. Am I in the Wrong?", text: "Post what happened under a nickname and hear what others think. Give kind feedback on other stories too." },
-  { to: "/calm", icon: Wind, title: "2. Cool Down", text: "Pick how you feel and find a way to settle it, like lying down with music or a walk outside." },
-  { to: "/reach-out", icon: Mail, title: "3. Reach out", text: "Write a letter to the other person: how you saw it, how you feel, and something kind for the future." },
+  { to: "/stories", icon: MessageCircle, title: "Am I in the Wrong?", text: "Share what happened and hear kind opinions." },
+  { to: "/calm", icon: Wind, title: "Cool Down", text: "Tips and tricks to calm down and feel better." },
+  { to: "/reach-out", icon: Mail, title: "Reach Out", text: "Send a note, signed or anonymous." },
 ] as const;
 
 function Index() {
   return (
     <main className="mx-auto max-w-5xl px-6 pb-10">
-      <section className="py-16 text-center md:py-24">
-        <p className="mb-4 text-sm font-bold uppercase tracking-widest text-primary">Had a falling out?</p>
-        <h1 className="mx-auto max-w-3xl text-5xl font-bold leading-tight text-foreground md:text-6xl">
-          Every conflict has two sides. Let's find the olive branch.
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-          A gentle place to be heard, cool down, and take the first step toward fixing things.
-        </p>
+      <section className="relative overflow-hidden py-16 text-center md:py-24">
+        <div aria-hidden className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full border-[28px] border-secondary" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full border-[20px] border-accent" />
+        <p className="text-sm font-bold uppercase tracking-widest text-primary">Extend the branch</p>
+        <h1 className="mt-4 text-5xl font-bold md:text-7xl">Start your journey</h1>
+        <Link to="/calm" className="mt-8 inline-block rounded-full border-2 border-primary bg-card px-8 py-3 text-xl font-bold text-primary shadow-soft transition-transform hover:-translate-y-0.5">
+          What am I feeling?
+        </Link>
       </section>
+
       <section className="grid gap-6 md:grid-cols-3">
         {steps.map((s) => (
-          <Link key={s.to} to={s.to} className="group rounded-[var(--radius)] bg-card p-7 shadow-soft transition-transform hover:-translate-y-1">
-            <s.icon className="h-9 w-9 text-primary" />
-            <h2 className="mt-5 text-2xl font-bold">{s.title}</h2>
+          <Link key={s.to} to={s.to} className="rounded-[var(--radius)] bg-card p-7 shadow-soft transition-transform hover:-translate-y-1">
+            <s.icon className="h-8 w-8 text-primary" />
+            <h2 className="mt-4 text-2xl font-bold">{s.title}</h2>
             <p className="mt-2 text-muted-foreground">{s.text}</p>
-            <span className="mt-5 inline-flex items-center gap-1 font-bold text-primary">
-              Go <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </span>
           </Link>
         ))}
+      </section>
+
+      <section className="mt-14 border-t border-border pt-10">
+        <h2 className="text-3xl font-bold">What We Believe</h2>
+        <p className="mt-4 max-w-3xl text-lg text-foreground/90">
+          Understanding your own emotions is key to understanding others. Our three-pronged approach offers teens a way to
+          express their emotions in a way that will positively impact their present and future relationships.
+        </p>
+        <p className="mt-8 inline-block rounded-md border border-border px-3 py-1 text-sm font-bold text-muted-foreground">For Teens by Teens</p>
       </section>
     </main>
   );
