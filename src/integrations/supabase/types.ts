@@ -14,7 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      feedback: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          nickname: string
+          story_id: string
+          verdict: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          nickname: string
+          story_id: string
+          verdict: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          nickname?: string
+          story_id?: string
+          verdict?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          nickname: string
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          nickname: string
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          nickname?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
