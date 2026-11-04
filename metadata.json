@@ -1,0 +1,6 @@
+{
+  "name": "Olive — work through conflicts",
+  "description": "Ask if you were in the wrong, cool down, and reach out to make things right.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
