@@ -1,4 +1,4 @@
-const ADJECTIVES = [
+export const NICKNAME_ADJECTIVES = [
   "Calm",
   "Brave",
   "Kind",
@@ -35,7 +35,7 @@ const ADJECTIVES = [
   "Thoughtful",
 ];
 
-const NOUNS = [
+export const NICKNAME_NOUNS = [
   "Giraffe",
   "Fox",
   "Otter",
@@ -66,13 +66,12 @@ const NOUNS = [
   "Fern",
   "Bluebird",
   "Brook",
-  "Badger",
   "Chameleon",
 ];
 
 export function generateRandomNickname(): string {
-  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const adj = NICKNAME_ADJECTIVES[Math.floor(Math.random() * NICKNAME_ADJECTIVES.length)];
+  const noun = NICKNAME_NOUNS[Math.floor(Math.random() * NICKNAME_NOUNS.length)];
   const num = Math.floor(Math.random() * 90) + 10; // 2 digits: 10-99
   return `${adj}${noun}${num}`;
 }

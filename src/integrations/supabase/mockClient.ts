@@ -132,7 +132,11 @@ const INITIAL_TIPS: MockTip[] = [
 class MemoryStore {
   stories: MockStory[] = [];
   tips: MockTip[] = [];
-  session: { user: { id: string; email: string }; access_token: string } | null = null;
+  session: {
+    user: { id: string; email: string; user_metadata?: Record<string, unknown> };
+    access_token: string;
+  } | null = null;
+  authUsersByEmail: Record<string, { id: string; user_metadata: Record<string, unknown> }> = {};
   authListeners: Array<(event: string, session: unknown) => void> = [];
 
   constructor() {
@@ -380,17 +384,36 @@ export function createMockSupabaseClient() {
         };
       },
       async signInWithPassword({ email }: { email: string; password?: string }) {
+        const key = email.trim().toLowerCase();
+        const existing = store.authUsersByEmail[key];
         store.session = {
-          user: { id: "mod-demo-user", email },
+          user: {
+            id: existing?.id ?? `user-${key}`,
+            email,
+            user_metadata: existing?.user_metadata ?? {},
+          },
           access_token: "mock-jwt-token",
         };
         store.save();
         store.notifyAuth("SIGNED_IN");
         return { data: { session: store.session, user: store.session.user }, error: null };
       },
-      async signUp({ email }: { email: string; password?: string }) {
+      async signUp({
+        email,
+        options,
+      }: {
+        email: string;
+        password?: string;
+        options?: { data?: Record<string, unknown> };
+      }) {
+        const key = email.trim().toLowerCase();
+        const id =
+          store.authUsersByEmail[key]?.id ??
+          `user-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const user_metadata = store.authUsersByEmail[key]?.user_metadata ?? options?.data ?? {};
+        store.authUsersByEmail[key] = { id, user_metadata };
         store.session = {
-          user: { id: "mod-demo-user", email },
+          user: { id, email, user_metadata },
           access_token: "mock-jwt-token",
         };
         store.save();

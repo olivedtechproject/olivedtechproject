@@ -97,21 +97,64 @@ function Index() {
         ))}
       </section>
 
-      {/* What We Believe Section */}
-      <section className="mt-14 border-t border-border pt-10">
-        <div className="flex items-center gap-2 text-navy">
-          <div className="h-2 w-2 rounded-full bg-navy" />
-          <h2 className="text-3xl font-bold text-foreground">What We Believe</h2>
+      {/* About Us / What We Believe In Block */}
+      <section
+        aria-labelledby="about-believe-heading"
+        className="mt-14 overflow-hidden rounded-[var(--radius)] border border-border bg-card shadow-soft"
+      >
+        <div className="grid divide-y divide-border md:grid-cols-12 md:divide-x md:divide-y-0">
+          {/* About Us */}
+          <div className="flex flex-col justify-between p-8 md:col-span-5 md:p-10">
+            <div>
+              <p className="text-sm font-bold text-navy">For Teens, by Teens</p>
+              <h2
+                id="about-believe-heading"
+                className="mt-2 text-3xl font-bold tracking-tight text-foreground text-balance"
+              >
+                About Us &amp; What We Believe In
+              </h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                Olive was created by teens, for teens who want a calmer, more honest way through
+                everyday conflict—whether it&apos;s with a friend, sibling, classmate, or family
+                member.
+              </p>
+            </div>
+            <p className="mt-6 border-t border-border pt-5 text-sm font-semibold text-navy">
+              A judgment-free space to pause, reflect, and repair.
+            </p>
+          </div>
+
+          {/* What We Believe In */}
+          <div className="bg-navy/[0.02] p-8 md:col-span-7 md:p-10">
+            <h3 className="text-xl font-bold text-foreground">What We Believe In</h3>
+            <p className="mt-3 text-base leading-relaxed text-foreground/90">
+              Understanding your own emotions is key to understanding others. Our three-pronged
+              approach offers teens a way to express their emotions in a way that will positively
+              impact their present and future relationships.
+            </p>
+
+            <dl className="mt-7 grid gap-5 border-t border-border pt-6 sm:grid-cols-3">
+              <div>
+                <dt className="text-sm font-bold text-navy">01. Perspective</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  Hear kind, honest opinions without pile-ons or public shaming.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-bold text-navy">02. Regulation</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  Take a breath and steady your emotions before reacting.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-bold text-navy">03. Repair</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  Extend the olive branch with clear words that leave room to move forward.
+                </dd>
+              </div>
+            </dl>
+          </div>
         </div>
-        <p className="mt-4 max-w-3xl text-lg text-foreground/90">
-          Understanding your own emotions is key to understanding others. Our three-pronged approach
-          offers teens a way to express their emotions in a way that will positively impact their
-          present and future relationships.
-        </p>
-        <p className="mt-8 inline-flex items-center gap-2 rounded-md border border-navy/30 bg-navy/5 px-3 py-1 text-sm font-bold text-navy">
-          <span className="h-1.5 w-1.5 rounded-full bg-navy" />
-          <span>For Teens by Teens</span>
-        </p>
       </section>
     </main>
   );

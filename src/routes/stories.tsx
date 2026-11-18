@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ import {
   Eye,
   Shuffle,
   Dices,
+  Lock,
+  ShieldCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,7 +24,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccountAlgorithm, detectStoryContexts } from "@/lib/feedAlgorithm";
 import { AlgorithmPreferencesDialog } from "@/components/AlgorithmPreferencesDialog";
 import { generateRandomNickname } from "@/lib/nicknameGenerator";
+import { useAccountSession } from "@/lib/accountAuth";
 import { AiConflictSuggestion } from "@/components/AiConflictSuggestion";
+import { AiModeratorFeedback } from "@/components/AiModeratorFeedback";
+import { moderateWithAI, screenNoHumanNames, type AiModerationResult } from "@/lib/aiModerator";
+import { detectHumanNames } from "@/lib/humanNameModeration";
 import { recordUserPostedStory } from "@/lib/userSiteHistory";
 
 export const Route = createFileRoute("/stories")({
@@ -93,13 +99,19 @@ export type Story = {
 };
 
 function Stories() {
-  // Generate a random nickname by default for posting
+  const { assignedUsername } = useAccountSession();
+  // Guests get a random nickname per post; account holders use their locked assigned username
   const [nick, setNick] = useState(() => generateRandomNickname());
+  const activePostNick = assignedUsername ?? nick;
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [modBusy, setModBusy] = useState(false);
+  const [modResult, setModResult] = useState<AiModerationResult | null>(null);
+  const [modError, setModError] = useState<string | null>(null);
+  const [modApprovedSignature, setModApprovedSignature] = useState<string | null>(null);
 
-  const algo = useAccountAlgorithm(nick);
+  const algo = useAccountAlgorithm(activePostNick);
   const { checkStoryExclusion } = algo;
 
   const { data: stories = [], isLoading } = useQuery({
@@ -118,16 +130,58 @@ function Stories() {
     },
   });
 
-  async function post(e: React.FormEvent) {
-    e.preventDefault();
-    const activeNick = nick.trim() || generateRandomNickname();
+  const currentSignature = `${title.trim()}::${body.trim()}`;
+
+  async function runStorySafetyCheck(): Promise<boolean> {
     if (title.trim().length < 3 || body.trim().length < 10) {
-      toast.error("Add a title and a bit more about what happened.");
+      toast.error("Add a title and a bit more about what happened first.");
+      return false;
+    }
+    setModBusy(true);
+    setModError(null);
+    const res = await moderateWithAI({
+      data: {
+        contentType: "story",
+        title: title.trim(),
+        body: body.trim(),
+      },
+    });
+    setModBusy(false);
+
+    if (!res.ok) {
+      setModResult(null);
+      setModError(res.error);
+      return false;
+    }
+
+    setModResult(res.moderation);
+    if (res.moderation.decision === "approve") {
+      setModApprovedSignature(currentSignature);
+      return true;
+    }
+
+    setModApprovedSignature(null);
+    return false;
+  }
+
+  async function insertStory() {
+    const nameCheck = screenNoHumanNames({
+      contentType: "story",
+      title: title.trim(),
+      body: body.trim(),
+    });
+    if (nameCheck) {
+      setModResult(nameCheck);
+      setModError(null);
+      setModApprovedSignature(null);
+      toast.error("Please remove real human names before posting.");
       return;
     }
+
+    const submittingNick = assignedUsername ?? (nick.trim() || generateRandomNickname());
     setBusy(true);
     const { error } = await supabase.from("stories").insert({
-      nickname: activeNick,
+      nickname: submittingNick,
       title: title.trim(),
       body: body.trim(),
       status: "pending",
@@ -140,17 +194,38 @@ function Stories() {
 
     recordUserPostedStory(title.trim(), body.trim());
 
-    // Reset post fields
     setTitle("");
     setBody("");
+    setModResult(null);
+    setModError(null);
+    setModApprovedSignature(null);
 
-    // Generate a fresh new random nickname for the next post!
-    const nextNick = generateRandomNickname();
-    setNick(nextNick);
+    if (assignedUsername) {
+      toast.success("Sent for moderation!", {
+        description: `Posted under your permanent account name "${assignedUsername}".`,
+      });
+    } else {
+      const nextNick = generateRandomNickname();
+      setNick(nextNick);
+      toast.success("Sent for moderation!", {
+        description: `Posted as "${submittingNick}". Rolled a new nickname ("${nextNick}") for your next post!`,
+      });
+    }
+  }
 
-    toast.success("Sent for moderation!", {
-      description: `Posted as "${activeNick}". Rolled a new nickname ("${nextNick}") for your next post!`,
-    });
+  async function post(e: React.FormEvent) {
+    e.preventDefault();
+    if (title.trim().length < 3 || body.trim().length < 10) {
+      toast.error("Add a title and a bit more about what happened.");
+      return;
+    }
+
+    if (modApprovedSignature !== currentSignature) {
+      const passed = await runStorySafetyCheck();
+      if (!passed) return;
+    }
+
+    await insertStory();
   }
 
   // Filter stories through the user's account algorithm preferences
@@ -173,65 +248,135 @@ function Stories() {
         onSubmit={post}
         className="mt-8 space-y-4 rounded-[var(--radius)] bg-card p-6 shadow-soft border border-border"
       >
-        {/* Random Nickname Generator Display */}
+        {/* Account Locked Username or Guest Random Nickname Display */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-navy/20 bg-muted/40 p-4 transition-all">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-navy/25 bg-navy/10 text-navy shadow-2xs">
-              <Dices className="h-5 w-5" />
+              {assignedUsername ? <Lock className="h-5 w-5" /> : <Dices className="h-5 w-5" />}
             </div>
             <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                <span>Posting anonymously as</span>
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-              </div>
-              <p className="font-display text-lg font-bold text-foreground">{nick}</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                {assignedUsername
+                  ? "Posting with your permanent account name (locked)"
+                  : "Posting as guest"}
+              </p>
+              <p className="font-display text-lg font-bold text-foreground">{activePostNick}</p>
             </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const fresh = generateRandomNickname();
-              setNick(fresh);
-              toast.info(`Rolled new nickname: ${fresh}`);
-            }}
-            className="rounded-full gap-1.5 text-xs font-semibold hover:border-navy hover:text-navy transition-colors"
-            title="Roll a different nickname"
-          >
-            <Shuffle className="h-3.5 w-3.5" />
-            <span>Roll another name</span>
-          </Button>
+          {assignedUsername ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy">
+              <Lock className="h-3.5 w-3.5" />
+              <span>Cannot be changed</span>
+            </span>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const fresh = generateRandomNickname();
+                  setNick(fresh);
+                  toast.info(`Rolled new nickname: ${fresh}`);
+                }}
+                className="gap-1.5 rounded-full text-xs font-semibold transition-colors hover:border-navy hover:text-navy"
+                title="Roll a different guest nickname"
+              >
+                <Shuffle className="h-3.5 w-3.5" />
+                <span>Roll another name</span>
+              </Button>
+              <Link to="/account" className="text-xs font-bold text-navy hover:underline">
+                Get permanent account name
+              </Link>
+            </div>
+          )}
         </div>
 
         <Input
           placeholder="AITW for… (one line)"
           maxLength={120}
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setModResult(null);
+            setModError(null);
+            setModApprovedSignature(null);
+          }}
         />
         <Textarea
           placeholder="Tell the story. How did it start? What did you do? How do you feel?"
           rows={5}
           maxLength={4000}
           value={body}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => {
+            setBody(e.target.value);
+            setModResult(null);
+            setModError(null);
+            setModApprovedSignature(null);
+          }}
         />
 
+        {/* AI Safety Moderator Feedback */}
+        <AiModeratorFeedback
+          result={modResult}
+          error={modError}
+          onApplyRewrite={(rewrite) => {
+            const cleanTitle = detectHumanNames(title).anonymizedText;
+            setTitle(cleanTitle);
+            setBody(rewrite);
+            setModResult(null);
+            setModError(null);
+            setModApprovedSignature(null);
+            toast.success("Updated your story with safer, anonymous wording.");
+          }}
+          onDismiss={() => {
+            setModResult(null);
+            setModError(null);
+          }}
+        />
+
+        {modError && (
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              onClick={insertStory}
+              className="rounded-lg text-xs font-bold"
+            >
+              Submit to human moderator queue anyway
+            </Button>
+          </div>
+        )}
+
         {/* Optional AI Conflict Suggestion & Emotional Regulation */}
-        <AiConflictSuggestion title={title} body={body} nickname={nick} />
+        <AiConflictSuggestion title={title} body={body} nickname={activePostNick} />
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={busy} className="rounded-full">
-              Send for approval
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button type="submit" disabled={busy || modBusy} className="rounded-full">
+              {modBusy ? "Checking safety…" : "Send for approval"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy || modBusy}
+              onClick={runStorySafetyCheck}
+              className="gap-1.5 rounded-full text-xs font-bold"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+              <span>{modBusy ? "Scanning…" : "AI Safety Check"}</span>
             </Button>
             <span className="text-xs text-muted-foreground">
-              Checked by a moderator before appearing.
+              No real human names allowed. Screened by AI Moderator &amp; human moderators.
             </span>
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground italic">
-            A new nickname is rolled every time you post
+          <span className="text-[11px] font-medium italic text-muted-foreground">
+            {assignedUsername
+              ? "Your account name stays locked on all posts"
+              : "A new guest nickname is rolled every time you post"}
           </span>
         </div>
       </form>
@@ -252,7 +397,7 @@ function Stories() {
             </span>
           )}
         </div>
-        <AlgorithmPreferencesDialog algo={algo} nickname={nick} />
+        <AlgorithmPreferencesDialog algo={algo} nickname={activePostNick} />
       </div>
 
       <div className="mt-6 space-y-6">
@@ -271,7 +416,7 @@ function Stories() {
                 </p>
                 <AlgorithmPreferencesDialog
                   algo={algo}
-                  nickname={nick}
+                  nickname={activePostNick}
                   trigger={
                     <Button variant="default" size="sm" className="rounded-full">
                       Manage Excluded Contexts
@@ -288,7 +433,7 @@ function Stories() {
         )}
 
         {visibleStories.map((s) => (
-          <StoryCard key={s.id} story={s} algo={algo} />
+          <StoryCard key={s.id} story={s} algo={algo} assignedUsername={assignedUsername} />
         ))}
       </div>
     </main>
@@ -330,9 +475,11 @@ function React_({
 function StoryCard({
   story,
   algo,
+  assignedUsername,
 }: {
   story: Story;
   algo: ReturnType<typeof useAccountAlgorithm>;
+  assignedUsername: string | null;
   key?: string;
 }) {
   const qc = useQueryClient();
@@ -340,8 +487,12 @@ function StoryCard({
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [replyNick, setReplyNick] = useState(() => generateRandomNickname());
+  const activeReplyNick = assignedUsername ?? replyNick;
   const [showExcludedFeedback, setShowExcludedFeedback] = useState<Record<string, boolean>>({});
   const [showAiAdvice, setShowAiAdvice] = useState(false);
+  const [replyModBusy, setReplyModBusy] = useState(false);
+  const [replyModResult, setReplyModResult] = useState<AiModerationResult | null>(null);
+  const [replyModError, setReplyModError] = useState<string | null>(null);
 
   const contexts = detectStoryContexts(story.title, story.body);
 
@@ -423,10 +574,33 @@ function StoryCard({
   async function reply(e: React.FormEvent) {
     e.preventDefault();
     if (text.trim().length < 2) return;
-    const activeReplyNick = replyNick.trim() || generateRandomNickname();
+
+    setReplyModBusy(true);
+    setReplyModError(null);
+    const mod = await moderateWithAI({
+      data: {
+        contentType: "reply",
+        title: story.title,
+        body: text.trim(),
+      },
+    });
+    setReplyModBusy(false);
+
+    if (!mod.ok) {
+      setReplyModResult(null);
+      setReplyModError(mod.error);
+      return;
+    }
+
+    setReplyModResult(mod.moderation);
+    if (mod.moderation.decision !== "approve") {
+      return;
+    }
+
+    const submittingReplyNick = assignedUsername ?? (replyNick.trim() || generateRandomNickname());
     const { error } = await supabase.from("feedback").insert({
       story_id: story.id,
-      nickname: activeReplyNick,
+      nickname: submittingReplyNick,
       verdict: "both",
       body: text.trim(),
     });
@@ -436,13 +610,19 @@ function StoryCard({
     }
 
     setText("");
-    // Roll a new random nickname for the next feedback reply!
-    const nextReplyNick = generateRandomNickname();
-    setReplyNick(nextReplyNick);
-
-    toast.success("Feedback sent!", {
-      description: `Shared as "${activeReplyNick}". Rolled new nickname ("${nextReplyNick}") for next reply.`,
-    });
+    setReplyModResult(null);
+    setReplyModError(null);
+    if (assignedUsername) {
+      toast.success("Feedback sent!", {
+        description: `Shared under your permanent account name "${assignedUsername}".`,
+      });
+    } else {
+      const nextReplyNick = generateRandomNickname();
+      setReplyNick(nextReplyNick);
+      toast.success("Feedback sent!", {
+        description: `Shared as "${submittingReplyNick}". Rolled new nickname ("${nextReplyNick}") for next reply.`,
+      });
+    }
     qc.invalidateQueries({ queryKey: ["stories"] });
   }
 
@@ -616,27 +796,37 @@ function StoryCard({
             onSubmit={reply}
             className="space-y-3 rounded-2xl border border-border bg-card/60 p-4 mt-3"
           >
-            {/* Random Reply Nickname Display & Roll */}
+            {/* Permanent Account Username or Guest Random Reply Nickname */}
             <div className="flex items-center justify-between gap-2 rounded-xl border border-navy/15 bg-muted/50 px-3 py-2 text-xs">
               <div className="flex items-center gap-2">
-                <UserCircle2 className="h-4 w-4 text-primary" />
+                {assignedUsername ? (
+                  <Lock className="h-3.5 w-3.5 text-navy" />
+                ) : (
+                  <UserCircle2 className="h-4 w-4 text-primary" />
+                )}
                 <span className="text-muted-foreground">
                   Replying as:{" "}
-                  <strong className="font-bold text-foreground font-display">{replyNick}</strong>
+                  <strong className="font-display font-bold text-foreground">
+                    {activeReplyNick}
+                  </strong>
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const fresh = generateRandomNickname();
-                  setReplyNick(fresh);
-                }}
-                className="inline-flex items-center gap-1 font-semibold text-navy hover:underline transition-colors"
-                title="Roll another random nickname for this reply"
-              >
-                <Shuffle className="h-3 w-3" />
-                <span>Roll new</span>
-              </button>
+              {assignedUsername ? (
+                <span className="font-semibold text-navy">Permanent name</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fresh = generateRandomNickname();
+                    setReplyNick(fresh);
+                  }}
+                  className="inline-flex items-center gap-1 font-semibold text-navy transition-colors hover:underline"
+                  title="Roll another random guest nickname for this reply"
+                >
+                  <Shuffle className="h-3 w-3" />
+                  <span>Roll new</span>
+                </button>
+              )}
             </div>
 
             <p className="text-sm font-bold">Sentence starters</p>
@@ -657,11 +847,34 @@ function StoryCard({
               maxLength={1500}
               placeholder="Be kind and helpful. What could help them fix it?"
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                setReplyModResult(null);
+                setReplyModError(null);
+              }}
             />
-            <Button type="submit" size="sm" className="rounded-full">
-              Send feedback
-            </Button>
+            <AiModeratorFeedback
+              result={replyModResult}
+              error={replyModError}
+              onApplyRewrite={(rewrite) => {
+                setText(rewrite);
+                setReplyModResult(null);
+                setReplyModError(null);
+                toast.success("Applied safer wording to your reply.");
+              }}
+              onDismiss={() => {
+                setReplyModResult(null);
+                setReplyModError(null);
+              }}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="submit" size="sm" disabled={replyModBusy} className="rounded-full">
+                {replyModBusy ? "Checking safety…" : "Send feedback"}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                No real human names allowed · Screened by AI Moderator
+              </span>
+            </div>
           </form>
         </div>
       )}

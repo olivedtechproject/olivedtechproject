@@ -1,11 +1,28 @@
 import type * as React from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Sparkles, Check, MessageSquare, HeartHandshake } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  BookOpen,
+  Check,
+  HeartHandshake,
+  MessageSquare,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AiModeratorFeedback } from "@/components/AiModeratorFeedback";
+import { moderateWithAI, type AiModerationResult } from "@/lib/aiModerator";
 
 export const Route = createFileRoute("/reach-out")({
   head: () => ({
@@ -78,7 +95,40 @@ const forwardStarters = [
   "Even if you need space right now, I wanted you to know I care",
 ];
 
+const tutorialSteps = [
+  {
+    step: "01",
+    title: "Check in with yourself first",
+    detail:
+      "Take a minute to cool down before writing so your message comes from honesty rather than anger.",
+  },
+  {
+    step: "02",
+    title: "Add who you're writing to",
+    detail:
+      "Enter their name and email, then write your opening—or turn on sentence starters for ready-to-use ideas.",
+  },
+  {
+    step: "03",
+    title: "Share feelings & next steps",
+    detail:
+      "Fill in how you felt, how you saw things, how you'd like to move forward, and an optional kind gesture.",
+  },
+  {
+    step: "04",
+    title: "Preview & send (or talk)",
+    detail:
+      "Review the live note preview below, choose to sign or stay anonymous, and open your email app to send.",
+  },
+];
+
 function ReachOut() {
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    setShowTutorial(true);
+  }, []);
+
   const [allowStarters, setAllowStarters] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -99,6 +149,9 @@ function ReachOut() {
     gift: "",
     from: "",
   });
+  const [modBusy, setModBusy] = useState(false);
+  const [modResult, setModResult] = useState<AiModerationResult | null>(null);
+  const [modError, setModError] = useState<string | null>(null);
 
   const toggleStarters = () => {
     setAllowStarters((prev) => {
@@ -135,6 +188,8 @@ function ReachOut() {
     (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const updated = { ...f, [k]: e.target.value };
       setF(updated);
+      setModResult(null);
+      setModError(null);
       try {
         const snippet = [updated.message, updated.feel, updated.view].filter(Boolean).join(" ");
         if (snippet.length > 5) {
@@ -144,6 +199,37 @@ function ReachOut() {
         // ignore
       }
     };
+
+  async function runReachOutSafetyCheck() {
+    const noteBody = [f.message, f.feel, f.view, f.forward]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join("\n\n");
+
+    if (noteBody.length < 2) {
+      toast.error("Write a short message first so the AI Moderator can review it.");
+      return;
+    }
+
+    setModBusy(true);
+    setModError(null);
+    const res = await moderateWithAI({
+      data: {
+        contentType: "reach-out",
+        title: f.toName.trim() ? `Note to ${f.toName.trim()}` : undefined,
+        body: noteBody,
+      },
+    });
+    setModBusy(false);
+
+    if (!res.ok) {
+      setModResult(null);
+      setModError(res.error);
+      return;
+    }
+
+    setModResult(res.moderation);
+  }
 
   const signoff = f.from.trim() || "Anonymous";
 
@@ -164,14 +250,76 @@ function ReachOut() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 pb-12">
-      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-4xl font-bold md:text-5xl">Reach Out</h1>
           <p className="mt-2 text-lg text-muted-foreground">
             Taking the first step is brave. You can sign your name or stay anonymous.
           </p>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setShowTutorial(true)}
+          className="self-start gap-2 rounded-lg border-navy/25 text-xs font-bold text-navy hover:bg-navy/5 sm:self-center"
+        >
+          <BookOpen className="h-4 w-4" />
+          <span>How to use Reach Out</span>
+        </Button>
       </div>
+
+      {/* Pop-up Tutorial & In-Person Disclaimer Dialog */}
+      <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
+        <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto rounded-[var(--radius)] border border-border bg-card p-6 sm:p-8 shadow-soft">
+          <DialogHeader className="pr-8">
+            <div className="flex items-center gap-2.5 text-navy">
+              <BookOpen className="h-5 w-5" />
+              <DialogTitle className="font-display text-2xl font-bold text-foreground">
+                How to Use Reach Out
+              </DialogTitle>
+            </div>
+            <DialogDescription className="pt-1 text-sm text-muted-foreground">
+              4 quick steps to write a thoughtful note — click the X in the corner anytime to start
+              writing.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Tutorial Steps First */}
+          <ol className="mt-2 grid gap-3 sm:grid-cols-2">
+            {tutorialSteps.map((item) => (
+              <li
+                key={item.step}
+                className="flex flex-col rounded-xl border border-border/80 bg-muted/30 p-4"
+              >
+                <span className="text-xs font-bold text-navy tabular-nums">Step {item.step}</span>
+                <h3 className="mt-1 text-base font-bold text-foreground">{item.title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.detail}</p>
+              </li>
+            ))}
+          </ol>
+
+          {/* Disclaimer After How to Use */}
+          <aside
+            aria-label="In-person conflict disclaimer"
+            className="mt-2 flex items-start gap-3.5 rounded-xl border border-navy/25 bg-navy/[0.04] p-4"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-navy/20 bg-card text-navy">
+              <Users className="h-4 w-4" />
+            </div>
+            <div className="text-sm leading-relaxed">
+              <p className="font-bold text-foreground">
+                It might be best to solve certain conflicts in person.
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+                Notes are great for breaking the ice or organizing your thoughts calmly, but tone
+                and body language matter—if it feels safe and both of you are ready, a face-to-face
+                talk can clear up misunderstandings faster.
+              </p>
+            </div>
+          </aside>
+        </DialogContent>
+      </Dialog>
 
       {/* Allow Sentence Starters Control Banner */}
       <section className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-navy/20 bg-card p-5 shadow-soft">
@@ -424,7 +572,7 @@ function ReachOut() {
         <pre className="mt-4 whitespace-pre-wrap font-display text-lg leading-relaxed text-foreground">
           {letter}
         </pre>
-        <div className="mt-6 flex flex-wrap items-center gap-4">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button asChild={!!ready} disabled={!ready} className="rounded-full" size="lg">
             {ready ? (
               <a href={mailto}>Send my note</a>
@@ -432,7 +580,42 @@ function ReachOut() {
               <span>Add their email and a message to send</span>
             )}
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            disabled={modBusy}
+            onClick={runReachOutSafetyCheck}
+            className="gap-2 rounded-full text-sm font-bold"
+          >
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span>{modBusy ? "Checking tone & safety…" : "AI Tone & Safety Check"}</span>
+          </Button>
         </div>
+
+        <div className="mt-4">
+          <AiModeratorFeedback
+            result={modResult}
+            error={modError}
+            onApplyRewrite={(rewrite) => {
+              setF((prev) => ({
+                ...prev,
+                message: rewrite,
+                feel: "",
+                view: "",
+                forward: "",
+              }));
+              setModResult(null);
+              setModError(null);
+              toast.success("Updated your note with calmer wording.");
+            }}
+            onDismiss={() => {
+              setModResult(null);
+              setModError(null);
+            }}
+          />
+        </div>
+
         <p className="mt-3 text-sm text-muted-foreground">
           This opens your email app. Gift cards are bought separately — the note just lets them
           know.

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Leaf } from "lucide-react";
+import { Leaf, Lock, UserCircle2 } from "lucide-react";
+import { useAccountSession } from "@/lib/accountAuth";
 
 const links = [
   { to: "/stories", label: "Am I in the Wrong?" },
@@ -8,6 +9,8 @@ const links = [
 ] as const;
 
 export function SiteNav() {
+  const { assignedUsername } = useAccountSession();
+
   return (
     <header className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 px-6 py-6">
       <Link to="/" className="group flex items-center gap-2.5 font-display text-foreground">
@@ -21,12 +24,13 @@ export function SiteNav() {
           </span>
         </span>
       </Link>
-      <nav className="flex gap-1 rounded-full border border-border/80 bg-card/80 p-1 shadow-soft backdrop-blur-xs">
+
+      <nav className="flex flex-wrap items-center gap-1 rounded-full border border-border/80 bg-card/80 p-1 shadow-soft backdrop-blur-xs">
         {links.map((l) => (
           <Link
             key={l.to}
             to={l.to}
-            className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
             activeProps={{
               className:
                 "bg-primary text-primary-foreground hover:text-primary-foreground shadow-2xs",
@@ -36,6 +40,27 @@ export function SiteNav() {
           </Link>
         ))}
       </nav>
+
+      <Link
+        to="/account"
+        className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-navy/25 bg-card px-4 py-2 text-sm font-bold text-navy shadow-2xs transition-colors hover:border-navy hover:bg-navy/5"
+        activeProps={{
+          className:
+            "bg-navy text-navy-foreground border-navy hover:bg-navy hover:text-navy-foreground",
+        }}
+      >
+        {assignedUsername ? (
+          <>
+            <Lock className="h-3.5 w-3.5 shrink-0" />
+            <span>{assignedUsername}</span>
+          </>
+        ) : (
+          <>
+            <UserCircle2 className="h-4 w-4 shrink-0" />
+            <span>Account</span>
+          </>
+        )}
+      </Link>
     </header>
   );
 }
